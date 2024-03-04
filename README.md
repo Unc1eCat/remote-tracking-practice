@@ -1,1 +1,1 @@
-Branch for testing puches to master
+Branch for testing pushes to master
