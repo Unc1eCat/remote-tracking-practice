@@ -1,1 +1,1 @@
-nice content for a file
+print(__file__)
