@@ -1,1 +1,1 @@
-print(__file__)
+print('some sick bytes in da file')
