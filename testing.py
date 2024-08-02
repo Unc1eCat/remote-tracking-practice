@@ -1,3 +1,5 @@
+#! /bin/python3.10
+
 from os import path
 
 PROJ_DIR = '.'
