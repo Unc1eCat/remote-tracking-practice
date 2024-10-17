@@ -1,0 +1,67 @@
+#! /bin/bash
+
+usage() {
+	cat << 'END'
+findlostreflog [-g] [--] <ref>
+
+Returns commits that are unreachable from current refs, but which were reachable from the given `ref` at some point back in time.
+If `-g` is specified then outputs commit graph of all reachable commits and the found commits with found commits highlighted.
+END
+	[[ -n $1 ]] && exit "$1"
+}
+
+gitlogtree() {
+	git log --color=never --graph --all --decorate --pretty=oneline "$@"
+}
+
+run() {
+	reflogtmp="$(mktemp)"
+	reachabletmp="$(mktemp)"
+	git reflog --pretty=format:%H "$ref" | sort > "$reflogtmp"
+	git log --pretty=format:%H --all | sort > "$reachabletmp"
+	lost="$(comm -23 "$reflogtmp" "$reachabletmp")"
+
+	if ((graph)); then
+		pat="${lost//$'\n'/|}"
+		pat="(.*?(${pat%|}).*?)|$"
+		gitlogtree ${lost//$'\n'/ } | grep --color -E "$pat"
+	else
+		echo "$lost"
+	fi
+
+	rm "$reflogtmp"
+	rm "$reachabletmp"
+}
+
+# Prepare environment
+shopt -s extglob
+
+if [[ $- = *i* ]]; then
+	echo 'Do not source it.'
+	return 1
+fi
+
+# Default options
+graph=0
+
+# Parse arguments
+if [[ $# != @(1|2) ]]; then
+	usage 1
+fi
+
+while [[ $# -ne 0 ]]; do
+	case "$1" in
+		@(-|--)h?(elp)) usage 0 ;;
+		-g) graph=1 ;;
+		--) ref="$2"; break ;;
+		-*) usage 1 ;;
+		*) ref="$1"
+	esac
+	shift
+done
+
+if [[ -z $ref ]]; then
+	usage 1
+fi
+
+run
